@@ -260,6 +260,26 @@ body{font-family:'Jost',sans-serif;background:var(--light);color:var(--text);min
 .tint-blue{background:#e9f0f8;color:#225f9c;}
 .tint-rose{background:#f6ecef;color:#9c5168;}
 .btn svg{width:15px;height:15px;vertical-align:-2px;margin-right:2px;}
+/* ===== GALLERY LIGHTBOX ===== */
+.lb-ov{position:fixed;inset:0;background:#0c090b;z-index:9999;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;}
+.lb-topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;z-index:6;background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent);pointer-events:none;}
+.lb-count{color:#fff;font-family:'Jost',sans-serif;font-size:.82rem;letter-spacing:.12em;opacity:.92;}
+.lb-x{background:rgba(255,255,255,.16);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:1.45rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:auto;}
+.lb-stage{position:absolute;inset:0;overflow:hidden;}
+.lb-track{display:flex;width:300vw;height:100%;transform:translateX(-100vw);will-change:transform;}
+.lb-slide{flex:0 0 100vw;width:100vw;height:100%;display:flex;align-items:center;justify-content:center;}
+.lb-slide img{max-width:100%;max-height:100%;object-fit:contain;}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.13);border:none;color:#fff;width:46px;height:46px;border-radius:50%;font-size:1.7rem;line-height:1;cursor:pointer;z-index:6;display:none;align-items:center;justify-content:center;}
+.lb-prev{left:.8rem;} .lb-next{right:.8rem;}
+.lb-info{position:absolute;left:0;right:0;bottom:0;padding:2.4rem 1.2rem 1.5rem;z-index:6;background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,.35),transparent);color:#fff;text-align:center;pointer-events:none;}
+.lb-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:500;line-height:1.15;}
+.lb-sub{font-family:'Jost',sans-serif;font-size:.82rem;opacity:.78;margin-top:.2rem;}
+.lb-actions{display:flex;gap:.6rem;justify-content:center;margin-top:1rem;}
+.lb-act{display:inline-flex;align-items:center;gap:.4rem;border:none;border-radius:999px;padding:.62rem 1.4rem;font-family:'Jost',sans-serif;font-size:.86rem;font-weight:600;cursor:pointer;pointer-events:auto;}
+.lb-act svg{width:16px;height:16px;}
+.lb-share{background:#25D366;color:#fff;}
+.lb-edit{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.42);}
+@media(min-width:760px){.lb-nav{display:flex;}}
 </style>
 </head>
 <body>
@@ -2285,18 +2305,41 @@ async function sharePhotos(photos){
 
 // ═══ LIGHTBOX with navigation ═══
 window.openLightbox = function(idx) {
-  window.lightboxIdx = idx;
   const photos = window.galleryFiltered||[];
   if(!photos.length) return;
-  let overlay = document.getElementById('lightbox-overlay');
-  if(!overlay){
-    overlay = document.createElement('div');
-    overlay.id = 'lightbox-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(20,12,16,.96);z-index:9999;display:flex;align-items:center;justify-content:center;';
-    document.body.appendChild(overlay);
-  }
-  renderLightbox();
-  // Keyboard nav
+  window.lightboxIdx = idx;
+  window._lbAnimating = false;
+  let ov = document.getElementById('lightbox-overlay');
+  if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'lightbox-overlay';
+  ov.className = 'lb-ov';
+  ov.innerHTML = `
+    <div class="lb-topbar">
+      <span class="lb-count" id="lb-count"></span>
+      <button class="lb-x" onclick="closeLightbox()">×</button>
+    </div>
+    <div class="lb-stage" id="lb-stage">
+      <div class="lb-track" id="lb-track">
+        <div class="lb-slide" id="lb-s0"></div>
+        <div class="lb-slide" id="lb-s1"></div>
+        <div class="lb-slide" id="lb-s2"></div>
+      </div>
+    </div>
+    <button class="lb-nav lb-prev" id="lb-prev" onclick="lightboxNav(-1)">‹</button>
+    <button class="lb-nav lb-next" id="lb-next" onclick="lightboxNav(1)">›</button>
+    <div class="lb-info">
+      <div class="lb-title" id="lb-title"></div>
+      <div class="lb-sub" id="lb-sub"></div>
+      <div class="lb-actions">
+        <button class="lb-act lb-share" onclick="shareOnePhotoWhatsApp(window.galleryFiltered[window.lightboxIdx])"><i data-lucide="share-2"></i> Share</button>
+        <button class="lb-act lb-edit" onclick="openEditPhotoTags(window.galleryFiltered[window.lightboxIdx].id)"><i data-lucide="pencil"></i> Edit Tags</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  lbRenderSlides();
+  lbBindSwipe();
+  try{ window.lucide && window.lucide.createIcons(); }catch(e){}
   document.onkeydown = (e)=>{
     if(e.key==='Escape') closeLightbox();
     if(e.key==='ArrowLeft') lightboxNav(-1);
@@ -2304,43 +2347,79 @@ window.openLightbox = function(idx) {
   };
 };
 
-window.renderLightbox = function() {
-  const overlay = document.getElementById('lightbox-overlay');
-  if(!overlay) return;
+function lbRenderSlides(){
   const photos = window.galleryFiltered||[];
-  const p = photos[window.lightboxIdx];
-  if(!p){ closeLightbox(); return; }
-  const genderLabel = {female:'Women',male:'Men',girl:'Girls',boy:'Boys'}[p.gender]||'';
-  const bname = window.currentBoutique?.name||'';
-  overlay.innerHTML = `
-    <button onclick="closeLightbox()" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,.12);border:none;color:#fff;width:42px;height:42px;border-radius:50%;font-size:1.62rem;cursor:pointer;z-index:3;">×</button>
-    ${photos.length>1?`
-      <button onclick="event.stopPropagation();lightboxNav(-1)" style="position:absolute;left:.6rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:1.74rem;cursor:pointer;z-index:3;">‹</button>
-      <button onclick="event.stopPropagation();lightboxNav(1)" style="position:absolute;right:.6rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:1.74rem;cursor:pointer;z-index:3;">›</button>
-    `:''}
-    <div style="display:flex;flex-direction:column;align-items:center;max-width:92%;max-height:92%;" onclick="closeLightbox()">
-      <img src="${p.url}" style="max-width:100%;max-height:72vh;object-fit:contain;border-radius:6px;" onclick="event.stopPropagation();"/>
-      <div style="margin-top:.8rem;text-align:center;color:#fff;" onclick="event.stopPropagation();">
-        <div style="font-size:1.1rem;font-weight:500;">${p.category||''}${p.subtype?' · '+p.subtype:''}</div>
-        <div style="font-size:0.84rem;opacity:.7;margin-top:.2rem;">${genderLabel}${p.notes?' · '+p.notes:''}</div>
-        <button class="btn btn-sm" style="background:#25D366;margin-top:.7rem;" onclick="event.stopPropagation();shareOnePhotoWhatsApp(window.galleryFiltered[window.lightboxIdx])">Share Photo</button>
-        <button class="btn btn-sm" style="margin-top:.7rem;margin-left:.5rem;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.45);" onclick="event.stopPropagation();openEditPhotoTags(window.galleryFiltered[window.lightboxIdx].id)">Edit Tags</button>
-        <div style="font-size:0.75rem;opacity:.4;margin-top:.6rem;letter-spacing:.15em;">${bname} · ${window.lightboxIdx+1} / ${photos.length}</div>
-      </div>
-    </div>
-  `;
+  const i = window.lightboxIdx;
+  const fill=(id,idx)=>{ const el=document.getElementById(id); if(!el) return; const ph=photos[idx]; el.innerHTML = ph ? `<img src="${ph.url}" draggable="false" alt=""/>` : ''; };
+  fill('lb-s0', i-1); fill('lb-s1', i); fill('lb-s2', i+1);
+  const p = photos[i];
+  const genderLabel = {female:'Women',male:'Men',girl:'Girls',boy:'Boys'}[p&&p.gender]||'';
+  const t=document.getElementById('lb-title'); if(t) t.textContent = p ? `${p.category||''}${p.subtype?' · '+p.subtype:''}` : '';
+  const s=document.getElementById('lb-sub'); if(s) s.textContent = p ? `${genderLabel}${p.notes?' · '+p.notes:''}` : '';
+  const c=document.getElementById('lb-count'); if(c) c.textContent = `${i+1} / ${photos.length}`;
+  const pv=document.getElementById('lb-prev'); if(pv) pv.style.visibility = i>0 ? 'visible':'hidden';
+  const nx=document.getElementById('lb-next'); if(nx) nx.style.visibility = i<photos.length-1 ? 'visible':'hidden';
+  const track=document.getElementById('lb-track'); if(track){ track.style.transition='none'; track.style.transform='translateX(-100vw)'; }
+}
+window.renderLightbox = lbRenderSlides;
+
+function lbGoto(newIdx, toVW){
+  if(window._lbAnimating) return;
+  window._lbAnimating = true;
+  const track=document.getElementById('lb-track');
+  if(track){ track.style.transition='transform .27s cubic-bezier(.22,.61,.36,1)'; track.style.transform='translateX('+toVW+'vw)'; }
+  setTimeout(()=>{ window.lightboxIdx = newIdx; lbRenderSlides(); window._lbAnimating=false; }, 270);
+}
+
+window.lightboxNav = function(dir){
+  const photos = window.galleryFiltered||[];
+  const i = window.lightboxIdx;
+  if(dir>0 && i<photos.length-1) lbGoto(i+1, -200);
+  else if(dir<0 && i>0) lbGoto(i-1, 0);
 };
 
-window.lightboxNav = function(dir) {
-  const photos = window.galleryFiltered||[];
-  window.lightboxIdx = (window.lightboxIdx + dir + photos.length) % photos.length;
-  renderLightbox();
-};
+function lbBindSwipe(){
+  const stage=document.getElementById('lb-stage');
+  const track=document.getElementById('lb-track');
+  if(!stage||!track) return;
+  let sx=0, sy=0, dx=0, dy=0, drag=false, tgt=null;
+  const onStart=(x,y,target)=>{ if(window._lbAnimating) return; sx=x;sy=y;dx=0;dy=0;drag=true;tgt=target; track.style.transition='none'; };
+  const onMove=(x,y,e)=>{
+    if(!drag) return;
+    dx=x-sx; dy=y-sy;
+    if(Math.abs(dx)>Math.abs(dy)){
+      if(e&&e.cancelable) e.preventDefault();
+      const photos=window.galleryFiltered||[]; const i=window.lightboxIdx;
+      let d=dx;
+      if((d>0&&i===0)||(d<0&&i===photos.length-1)) d=d*0.3;
+      const sign = d<0 ? '- ' : '+ ';
+      track.style.transform='translateX(calc(-100vw '+sign+Math.abs(d)+'px))';
+    }
+  };
+  const onEnd=()=>{
+    if(!drag) return; drag=false;
+    window._lbTouchTime=Date.now();
+    const photos=window.galleryFiltered||[]; const i=window.lightboxIdx;
+    if(Math.abs(dx)<8 && Math.abs(dy)<8){
+      if(tgt && tgt.tagName!=='IMG') closeLightbox();
+      return;
+    }
+    const thresh=Math.min(90, window.innerWidth*0.18);
+    if(Math.abs(dx)>Math.abs(dy) && dx<=-thresh && i<photos.length-1) lbGoto(i+1,-200);
+    else if(Math.abs(dx)>Math.abs(dy) && dx>=thresh && i>0) lbGoto(i-1,0);
+    else { track.style.transition='transform .2s ease'; track.style.transform='translateX(-100vw)'; }
+  };
+  stage.addEventListener('touchstart',(e)=>{ const t=e.touches[0]; onStart(t.clientX,t.clientY,e.target); }, {passive:true});
+  stage.addEventListener('touchmove',(e)=>{ const t=e.touches[0]; onMove(t.clientX,t.clientY,e); }, {passive:false});
+  stage.addEventListener('touchend', onEnd);
+  stage.addEventListener('click',(e)=>{ if(Date.now()-(window._lbTouchTime||0)<600) return; if(e.target.tagName!=='IMG') closeLightbox(); });
+}
 
 window.closeLightbox = function() {
-  const overlay = document.getElementById('lightbox-overlay');
-  if(overlay) overlay.remove();
+  const ov = document.getElementById('lightbox-overlay');
+  if(ov) ov.remove();
   document.onkeydown = null;
+  window._lbAnimating = false;
 };
 
 window.deleteGalleryPhoto = async function(id) {
