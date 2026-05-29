@@ -1939,6 +1939,8 @@ window.pendingPhotoFiles = [];
 
 window.openPhotoTagModal = function(files) {
   if(!files || !files.length) return;
+  window._ptEditId = null;
+  const _ptt=document.querySelector('#photo-tag-modal .modal-title'); if(_ptt) _ptt.textContent='Tag Photos';
   window.pendingPhotoFiles = Array.from(files).filter(f=>f.type.startsWith('image/'));
   if(!window.pendingPhotoFiles.length){ alert('Please select image files'); return; }
   // Reset form
@@ -1981,6 +1983,7 @@ window.updatePtSubtypes = function() {
 };
 
 window.savePhotoUpload = async function() {
+  if(window._ptEditId){ return window.saveEditPhotoTags(); }
   const gender = document.getElementById('pt-gender').value;
   const category = document.getElementById('pt-category').value;
   const subtype = document.getElementById('pt-subtype').value;
@@ -2017,6 +2020,53 @@ window.savePhotoUpload = async function() {
   window.DB.activity.unshift(act);
   window.pendingPhotoFiles=[];
   setTimeout(()=>{ closeModal('photo-tag-modal'); renderLbCats(); renderGallery(); }, 600);
+};
+
+window.openEditPhotoTags = function(photoId){
+  const p = (window.DB.galleryPhotos||[]).find(x=>x.id===photoId);
+  if(!p){ alert('Photo not found'); return; }
+  window._ptEditId = photoId;
+  const t=document.querySelector('#photo-tag-modal .modal-title'); if(t) t.textContent='Edit Tags';
+  document.getElementById('pt-save-btn').textContent='Save Tags';
+  document.getElementById('pt-upload-status').textContent='';
+  document.getElementById('photo-tag-preview').innerHTML = `<div style="width:60px;height:60px;border-radius:4px;overflow:hidden;border:1px solid var(--blush);"><img src="${p.url}" style="width:100%;height:100%;object-fit:cover;"/></div>`;
+  document.getElementById('pt-gender').value = p.gender||'';
+  updatePtCategories();
+  document.getElementById('pt-category').value = p.category||'';
+  updatePtSubtypes();
+  document.getElementById('pt-subtype').value = p.subtype||'';
+  document.getElementById('pt-notes').value = p.notes||'';
+  openModal('photo-tag-modal');
+};
+
+window.saveEditPhotoTags = async function(){
+  const gender = document.getElementById('pt-gender').value;
+  const category = document.getElementById('pt-category').value;
+  const subtype = document.getElementById('pt-subtype').value;
+  const notes = document.getElementById('pt-notes').value.trim();
+  if(!gender || !category){ alert('Please select gender and category'); return; }
+  const p = (window.DB.galleryPhotos||[]).find(x=>x.id===window._ptEditId);
+  if(!p){ alert('Photo not found'); window._ptEditId=null; closeModal('photo-tag-modal'); return; }
+  const btn=document.getElementById('pt-save-btn'); const statusEl=document.getElementById('pt-upload-status');
+  btn.disabled=true; btn.style.opacity='0.6'; statusEl.textContent='Saving...';
+  try {
+    await updateDoc(bDoc('galleryPhotos', p.id), { gender, category, subtype, notes });
+    p.gender=gender; p.category=category; p.subtype=subtype; p.notes=notes;
+  } catch(err){
+    console.error('Edit tags failed:', err);
+    statusEl.textContent='❌ Failed: '+err.message;
+    btn.disabled=false; btn.style.opacity='1';
+    return;
+  }
+  statusEl.textContent='✅ Saved!';
+  window._ptEditId=null;
+  const t=document.querySelector('#photo-tag-modal .modal-title'); if(t) t.textContent='Tag Photos';
+  btn.disabled=false; btn.style.opacity='1'; btn.textContent='Upload Photos';
+  setTimeout(()=>{
+    closeModal('photo-tag-modal');
+    if(document.getElementById('lightbox-overlay')) closeLightbox();
+    renderLbCats(); renderGallery();
+  }, 500);
 };
 
 // ═══ LOOKBOOK ═══
@@ -2274,6 +2324,7 @@ window.renderLightbox = function() {
         <div style="font-size:1.1rem;font-weight:500;">${p.category||''}${p.subtype?' · '+p.subtype:''}</div>
         <div style="font-size:0.84rem;opacity:.7;margin-top:.2rem;">${genderLabel}${p.notes?' · '+p.notes:''}</div>
         <button class="btn btn-sm" style="background:#25D366;margin-top:.7rem;" onclick="event.stopPropagation();shareOnePhotoWhatsApp(window.galleryFiltered[window.lightboxIdx])">Share Photo</button>
+        <button class="btn btn-sm" style="margin-top:.7rem;margin-left:.5rem;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.45);" onclick="event.stopPropagation();openEditPhotoTags(window.galleryFiltered[window.lightboxIdx].id)">Edit Tags</button>
         <div style="font-size:0.75rem;opacity:.4;margin-top:.6rem;letter-spacing:.15em;">${bname} · ${window.lightboxIdx+1} / ${photos.length}</div>
       </div>
     </div>
