@@ -40,11 +40,17 @@ jobs:
           mkdir -p ~/.android
           cp android/debug.keystore ~/.android/debug.keystore
 
+      - name: Show keystore fingerprint
+        run: keytool -list -v -keystore android/debug.keystore -storepass android -alias androiddebugkey
+
       - name: Build debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
+
+      - name: Show APK signing certificate
+        run: keytool -printcert -jarfile android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Publish APK to Releases
         uses: softprops/action-gh-release@v2
