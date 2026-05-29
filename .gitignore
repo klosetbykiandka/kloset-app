@@ -11,3 +11,5 @@ Thumbs.db
 *.log
 *.keystore
 *.jks
+
+!android/debug.keystore
