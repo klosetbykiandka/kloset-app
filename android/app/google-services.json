@@ -30,6 +30,14 @@
           }
         },
         {
+          "client_id": "530022350443-i0gsvvg2t98h8lh5qcpqmjmud3onrmvb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.klosetbykiandka.manager",
+            "certificate_hash": "f7809cbdcf6f69e125dd6a5694f20c4ec571b3e8"
+          }
+        },
+        {
           "client_id": "530022350443-en28tmenobeufft7lsjmpmh0iihvjtli.apps.googleusercontent.com",
           "client_type": 3
         }
