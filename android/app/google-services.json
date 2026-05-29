@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "530022350443",
+    "project_id": "klosetbykiandka",
+    "storage_bucket": "klosetbykiandka.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:530022350443:android:2d59a2f1323df84bbebb2e",
+        "android_client_info": {
+          "package_name": "com.klosetbykiandka.manager"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "530022350443-3ego0hc1u20pkkdnlbnvc3j0l9bf8i22.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.klosetbykiandka.manager",
+            "certificate_hash": "fc312681ea923bd9222d17226fdb745082cc717a"
+          }
+        },
+        {
+          "client_id": "530022350443-en28tmenobeufft7lsjmpmh0iihvjtli.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3jHb2zYIdr_2BFyLDsDiBQMjQTLbY6oU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "530022350443-en28tmenobeufft7lsjmpmh0iihvjtli.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
