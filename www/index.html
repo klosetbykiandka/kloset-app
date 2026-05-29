@@ -261,17 +261,19 @@ body{font-family:'Jost',sans-serif;background:var(--light);color:var(--text);min
 .tint-rose{background:#f6ecef;color:#9c5168;}
 .btn svg{width:15px;height:15px;vertical-align:-2px;margin-right:2px;}
 /* ===== GALLERY LIGHTBOX ===== */
-.lb-ov{position:fixed;inset:0;background:#0c090b;z-index:9999;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;}
-.lb-topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;z-index:6;background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent);pointer-events:none;}
+.lb-ov{position:fixed;inset:0;z-index:9999;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;}
+.lb-scrim{position:absolute;inset:0;background:#0c090b;z-index:0;}
+.lb-content{position:absolute;inset:0;z-index:1;will-change:transform,opacity;}
+.lb-ov.lb-chrome-off .lb-topbar,.lb-ov.lb-chrome-off .lb-info{opacity:0;pointer-events:none;}
+.lb-topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;padding:.85rem 1rem;z-index:6;background:linear-gradient(to bottom,rgba(0,0,0,.5),transparent);pointer-events:none;transition:opacity .2s ease;}
 .lb-count{color:#fff;font-family:'Jost',sans-serif;font-size:.82rem;letter-spacing:.12em;opacity:.92;}
-.lb-x{background:rgba(255,255,255,.16);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:1.45rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:auto;}
 .lb-stage{position:absolute;inset:0;overflow:hidden;}
 .lb-track{display:flex;width:300vw;height:100%;transform:translateX(-100vw);will-change:transform;}
 .lb-slide{flex:0 0 100vw;width:100vw;height:100%;display:flex;align-items:center;justify-content:center;}
 .lb-slide img{max-width:100%;max-height:100%;object-fit:contain;}
 .lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.13);border:none;color:#fff;width:46px;height:46px;border-radius:50%;font-size:1.7rem;line-height:1;cursor:pointer;z-index:6;display:none;align-items:center;justify-content:center;}
 .lb-prev{left:.8rem;} .lb-next{right:.8rem;}
-.lb-info{position:absolute;left:0;right:0;bottom:0;padding:2.4rem 1.2rem 1.5rem;z-index:6;background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,.35),transparent);color:#fff;text-align:center;pointer-events:none;}
+.lb-info{position:absolute;left:0;right:0;bottom:0;padding:2.4rem 1.2rem 1.5rem;z-index:6;background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,.35),transparent);color:#fff;text-align:center;pointer-events:none;transition:opacity .2s ease;}
 .lb-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:500;line-height:1.15;}
 .lb-sub{font-family:'Jost',sans-serif;font-size:.82rem;opacity:.78;margin-top:.2rem;}
 .lb-actions{display:flex;gap:.6rem;justify-content:center;margin-top:1rem;}
@@ -2315,25 +2317,27 @@ window.openLightbox = function(idx) {
   ov.id = 'lightbox-overlay';
   ov.className = 'lb-ov';
   ov.innerHTML = `
-    <div class="lb-topbar">
-      <span class="lb-count" id="lb-count"></span>
-      <button class="lb-x" onclick="closeLightbox()">×</button>
-    </div>
-    <div class="lb-stage" id="lb-stage">
-      <div class="lb-track" id="lb-track">
-        <div class="lb-slide" id="lb-s0"></div>
-        <div class="lb-slide" id="lb-s1"></div>
-        <div class="lb-slide" id="lb-s2"></div>
+    <div class="lb-scrim" id="lb-scrim"></div>
+    <div class="lb-content" id="lb-content">
+      <div class="lb-topbar">
+        <span class="lb-count" id="lb-count"></span>
       </div>
-    </div>
-    <button class="lb-nav lb-prev" id="lb-prev" onclick="lightboxNav(-1)">‹</button>
-    <button class="lb-nav lb-next" id="lb-next" onclick="lightboxNav(1)">›</button>
-    <div class="lb-info">
-      <div class="lb-title" id="lb-title"></div>
-      <div class="lb-sub" id="lb-sub"></div>
-      <div class="lb-actions">
-        <button class="lb-act lb-share" onclick="shareOnePhotoWhatsApp(window.galleryFiltered[window.lightboxIdx])"><i data-lucide="share-2"></i> Share</button>
-        <button class="lb-act lb-edit" onclick="openEditPhotoTags(window.galleryFiltered[window.lightboxIdx].id)"><i data-lucide="pencil"></i> Edit Tags</button>
+      <div class="lb-stage" id="lb-stage">
+        <div class="lb-track" id="lb-track">
+          <div class="lb-slide" id="lb-s0"></div>
+          <div class="lb-slide" id="lb-s1"></div>
+          <div class="lb-slide" id="lb-s2"></div>
+        </div>
+      </div>
+      <button class="lb-nav lb-prev" id="lb-prev" onclick="lightboxNav(-1)">‹</button>
+      <button class="lb-nav lb-next" id="lb-next" onclick="lightboxNav(1)">›</button>
+      <div class="lb-info">
+        <div class="lb-title" id="lb-title"></div>
+        <div class="lb-sub" id="lb-sub"></div>
+        <div class="lb-actions">
+          <button class="lb-act lb-share" onclick="shareOnePhotoWhatsApp(window.galleryFiltered[window.lightboxIdx])"><i data-lucide="share-2"></i> Share</button>
+          <button class="lb-act lb-edit" onclick="openEditPhotoTags(window.galleryFiltered[window.lightboxIdx].id)"><i data-lucide="pencil"></i> Edit Tags</button>
+        </div>
       </div>
     </div>`;
   document.body.appendChild(ov);
@@ -2379,37 +2383,65 @@ window.lightboxNav = function(dir){
 };
 
 function lbBindSwipe(){
+  const ov=document.getElementById('lightbox-overlay');
   const stage=document.getElementById('lb-stage');
   const track=document.getElementById('lb-track');
-  if(!stage||!track) return;
-  let sx=0, sy=0, dx=0, dy=0, drag=false, tgt=null;
-  const onStart=(x,y,target)=>{ if(window._lbAnimating) return; sx=x;sy=y;dx=0;dy=0;drag=true;tgt=target; track.style.transition='none'; };
+  const content=document.getElementById('lb-content');
+  const scrim=document.getElementById('lb-scrim');
+  if(!stage||!track||!content) return;
+  let sx=0, sy=0, dx=0, dy=0, drag=false, axis=null;
+  const H=()=>window.innerHeight;
+  const resetAll=()=>{
+    track.style.transition='transform .2s ease'; track.style.transform='translateX(-100vw)';
+    content.style.transition='transform .25s ease,opacity .25s ease'; content.style.transform='translateY(0) scale(1)'; content.style.opacity='1';
+    if(scrim){ scrim.style.transition='opacity .25s ease'; scrim.style.opacity='1'; }
+  };
+  const onStart=(x,y)=>{ if(window._lbAnimating) return; sx=x;sy=y;dx=0;dy=0;drag=true;axis=null; track.style.transition='none'; content.style.transition='none'; if(scrim) scrim.style.transition='none'; };
   const onMove=(x,y,e)=>{
     if(!drag) return;
     dx=x-sx; dy=y-sy;
-    if(Math.abs(dx)>Math.abs(dy)){
-      if(e&&e.cancelable) e.preventDefault();
+    if(!axis){ if(Math.abs(dx)<8 && Math.abs(dy)<8) return; axis = Math.abs(dx)>Math.abs(dy) ? 'x' : 'y'; }
+    if(e&&e.cancelable) e.preventDefault();
+    if(axis==='x'){
       const photos=window.galleryFiltered||[]; const i=window.lightboxIdx;
       let d=dx;
       if((d>0&&i===0)||(d<0&&i===photos.length-1)) d=d*0.3;
       const sign = d<0 ? '- ' : '+ ';
       track.style.transform='translateX(calc(-100vw '+sign+Math.abs(d)+'px))';
+    } else {
+      let d=dy; if(d<0) d=d*0.2;
+      const prog=Math.min(Math.max(d/(H()*0.6),0),1);
+      content.style.transform='translateY('+d+'px) scale('+(1-prog*0.08)+')';
+      content.style.opacity=String(1-prog*0.25);
+      if(scrim) scrim.style.opacity=String(1-prog*0.85);
     }
   };
   const onEnd=()=>{
     if(!drag) return; drag=false;
     window._lbTouchTime=Date.now();
     const photos=window.galleryFiltered||[]; const i=window.lightboxIdx;
-    if(Math.abs(dx)<8 && Math.abs(dy)<8){
-      if(tgt && tgt.tagName!=='IMG') closeLightbox();
+    if(Math.abs(dx)<10 && Math.abs(dy)<10){
+      resetAll();
+      if(ov) ov.classList.toggle('lb-chrome-off');
       return;
     }
-    const thresh=Math.min(90, window.innerWidth*0.18);
-    if(Math.abs(dx)>Math.abs(dy) && dx<=-thresh && i<photos.length-1) lbGoto(i+1,-200);
-    else if(Math.abs(dx)>Math.abs(dy) && dx>=thresh && i>0) lbGoto(i-1,0);
-    else { track.style.transition='transform .2s ease'; track.style.transform='translateX(-100vw)'; }
+    if(axis==='x'){
+      const thresh=Math.min(90, window.innerWidth*0.18);
+      if(dx<=-thresh && i<photos.length-1) lbGoto(i+1,-200);
+      else if(dx>=thresh && i>0) lbGoto(i-1,0);
+      else { track.style.transition='transform .2s ease'; track.style.transform='translateX(-100vw)'; }
+    } else if(axis==='y'){
+      if(dy>H()*0.18){
+        window._lbAnimating=true;
+        content.style.transition='transform .22s ease,opacity .22s ease';
+        content.style.transform='translateY('+H()+'px) scale(.9)';
+        content.style.opacity='0';
+        if(scrim){ scrim.style.transition='opacity .22s ease'; scrim.style.opacity='0'; }
+        setTimeout(()=>{ closeLightbox(); }, 200);
+      } else { resetAll(); }
+    } else { resetAll(); }
   };
-  stage.addEventListener('touchstart',(e)=>{ const t=e.touches[0]; onStart(t.clientX,t.clientY,e.target); }, {passive:true});
+  stage.addEventListener('touchstart',(e)=>{ const t=e.touches[0]; onStart(t.clientX,t.clientY); }, {passive:true});
   stage.addEventListener('touchmove',(e)=>{ const t=e.touches[0]; onMove(t.clientX,t.clientY,e); }, {passive:false});
   stage.addEventListener('touchend', onEnd);
   stage.addEventListener('click',(e)=>{ if(Date.now()-(window._lbTouchTime||0)<600) return; if(e.target.tagName!=='IMG') closeLightbox(); });
