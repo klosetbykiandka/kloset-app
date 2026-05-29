@@ -13,3 +13,5 @@ Thumbs.db
 *.jks
 
 !android/debug.keystore
+
+!android/debug.keystore
