@@ -276,11 +276,12 @@ body{font-family:'Jost',sans-serif;background:var(--light);color:var(--text);min
 .lb-info{position:absolute;left:0;right:0;bottom:0;padding:2.4rem 1.2rem 1.5rem;z-index:6;background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,.35),transparent);color:#fff;text-align:center;pointer-events:none;transition:opacity .2s ease;}
 .lb-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:500;line-height:1.15;}
 .lb-sub{font-family:'Jost',sans-serif;font-size:.82rem;opacity:.78;margin-top:.2rem;}
-.lb-actions{display:flex;gap:.6rem;justify-content:center;margin-top:1rem;}
+.lb-actions{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-top:1rem;}
 .lb-act{display:inline-flex;align-items:center;gap:.4rem;border:none;border-radius:999px;padding:.62rem 1.4rem;font-family:'Jost',sans-serif;font-size:.86rem;font-weight:600;cursor:pointer;pointer-events:auto;}
 .lb-act svg{width:16px;height:16px;}
 .lb-share{background:#25D366;color:#fff;}
 .lb-edit{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.42);}
+.lb-del{background:rgba(214,69,47,.92);color:#fff;}
 @media(min-width:760px){.lb-nav{display:flex;}}
 </style>
 </head>
@@ -2204,7 +2205,6 @@ window.renderGallery = function() {
     return `
     <div class="lb-card ${sel?'selectable':''} ${isSelected?'selected':''}" onclick="${sel?`togglePhotoSelect('${p.id}')`:`openLightbox(${idx})`}">
       <div class="lb-card-check">${isSelected?'✓':''}</div>
-      <button class="lb-card-del" onclick="event.stopPropagation();deleteGalleryPhoto('${p.id}')">✕</button>
       <img src="${p.url}" loading="lazy"/>
       <div class="lb-card-label">${p.subtype||p.category||''}</div>
     </div>`;
@@ -2350,7 +2350,8 @@ window.openLightbox = function(idx) {
         <div class="lb-sub" id="lb-sub"></div>
         <div class="lb-actions">
           <button class="lb-act lb-share" onclick="shareOnePhotoWhatsApp(window.galleryFiltered[window.lightboxIdx])"><i data-lucide="share-2"></i> Share</button>
-          <button class="lb-act lb-edit" onclick="openEditPhotoTags(window.galleryFiltered[window.lightboxIdx].id)"><i data-lucide="pencil"></i> Edit Tags</button>
+          <button class="lb-act lb-edit" onclick="openEditPhotoTags(window.galleryFiltered[window.lightboxIdx].id)"><i data-lucide="pencil"></i> Edit</button>
+          <button class="lb-act lb-del" onclick="deletePhotoFromLightbox()"><i data-lucide="trash-2"></i> Delete</button>
         </div>
       </div>
     </div>`;
@@ -2470,8 +2471,7 @@ function _lbRemove(){
 }
 window.closeLightbox = function(){ window.kkCloseTop(); };
 
-window.deleteGalleryPhoto = async function(id) {
-  if(!confirm('Delete this photo permanently?')) return;
+async function _doDeleteGalleryPhoto(id){
   const photo = window.DB.galleryPhotos.find(p=>p.id===id);
   if(!photo) return;
   try {
@@ -2484,6 +2484,18 @@ window.deleteGalleryPhoto = async function(id) {
   window.DB.galleryPhotos = window.DB.galleryPhotos.filter(p=>p.id!==id);
   renderLbCats();
   renderGallery();
+}
+window.deleteGalleryPhoto = async function(id) {
+  if(!confirm('Delete this photo permanently?')) return;
+  await _doDeleteGalleryPhoto(id);
+};
+window.deletePhotoFromLightbox = async function(){
+  const photos = window.galleryFiltered||[];
+  const p = photos[window.lightboxIdx];
+  if(!p) return;
+  if(!confirm('Delete this photo permanently?')) return;
+  closeLightbox();
+  await _doDeleteGalleryPhoto(p.id);
 };
 
 window.renderCustomers = function() {
